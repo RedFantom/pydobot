@@ -52,6 +52,8 @@ class Dobot:
         msg = Message()
         msg.id = CommunicationProtocolIDs.GET_POSE
         response = self._send_command(msg)
+        while response is None:
+            response = self._send_command(msg)
         self.x = struct.unpack_from('f', response.params, 0)[0]
         self.y = struct.unpack_from('f', response.params, 4)[0]
         self.z = struct.unpack_from('f', response.params, 8)[0]
@@ -74,14 +76,14 @@ class Dobot:
         return response
 
     def _read_message(self):
-        time.sleep(0.1)
+        time.sleep(0.02)
         b = self.ser.read_all()
         if len(b) > 0:
             msg = Message(b)
             if self.verbose:
                 print('pydobot: <<', msg)
             return msg
-        return
+        return self._read_message()
 
     def _send_command(self, msg, wait=False):
         self.lock.acquire()
@@ -110,7 +112,7 @@ class Dobot:
         return response
 
     def _send_message(self, msg):
-        time.sleep(0.1)
+        # time.sleep(0.1)
         if self.verbose:
             print('pydobot: >>', msg)
         self.ser.write(msg.bytes())
